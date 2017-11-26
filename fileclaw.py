@@ -285,7 +285,7 @@ class claw:
 	def mainloop(self):
 		while(self.ch != ord('q')):
 			self.ch = self.screen.getch()
-			if self.ch == ord('s'):
+			if self.ch == ord('f'):
 				self.set_ext()
 			if self.ch == ord('c'):
 				self.directory_change()
@@ -338,6 +338,31 @@ class claw:
 					self.rchoice += 1
 					self.draw_fpad()
 					continue
+				if self.ch == ord('w') and self.rchoice == 0:	
+					self.chosen[0], self.chosen[len(self.chosen)-1] = self.chosen[len(self.chosen)-1], self.chosen[0]
+					self.abs_chosen[0], self.abs_chosen[len(self.abs_chosen)-1] = self.abs_chosen[len(self.abs_chosen)-1], self.abs_chosen[0]
+					self.rchoice = len(self.chosen)-1
+					self.draw_fpad()
+					continue
+				if self.ch == ord('w'):
+					self.chosen[self.rchoice], self.chosen[self.rchoice-1] = self.chosen[self.rchoice-1], self.chosen[self.rchoice]
+					self.abs_chosen[self.rchoice], self.abs_chosen[self.rchoice-1] = self.abs_chosen[self.rchoice-1], self.abs_chosen[self.rchoice]
+					self.rchoice -= 1
+					self.draw_fpad()
+					continue
+				if self.ch == ord('s') and self.rchoice == len(self.chosen)-1:	
+					self.chosen[len(self.chosen)-1], self.chosen[0] = self.chosen[0], self.chosen[len(self.chosen)-1]
+					self.abs_chosen[len(self.chosen)-1], self.abs_chosen[0] = self.abs_chosen[0], self.abs_chosen[len(self.chosen)-1]
+					self.rchoice = 0
+					self.draw_fpad()
+					continue
+				if self.ch == ord('s'):
+					self.chosen[self.rchoice+1], self.chosen[self.rchoice] = self.chosen[self.rchoice], self.chosen[self.rchoice+1]
+					self.abs_chosen[self.rchoice+1], self.abs_chosen[self.rchoice] = self.abs_chosen[self.rchoice], self.abs_chosen[self.rchoice+1]
+					self.rchoice += 1
+					self.draw_fpad()
+					continue
+
 				if self.ch == ord('d'): #curses.KEY_BACKSPACE:
 					if len(self.chosen) == 0:
 						curses.doupdate()
