@@ -27,7 +27,8 @@ exactly how I want.
 
 Navigate between windows using ```TAB```, select files using ```ENTER```, remove files 
 from the buildlist using ```d```, change directories using ```c```,
- and set the extension filter using ```s```.
+ and set the extension filter using ```f```. The buildlist may be ordered
+using ```w``` and ```s```.
 
 ### Dependencies
 
