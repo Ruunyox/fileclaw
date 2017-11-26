@@ -31,6 +31,7 @@ class claw:
 		self.rchoice = 0
 		self.listfiles = []
 		self.chosen = []
+		self.abs_chosen = []
 		self.ch = ''
 		self.directory_populate()
 		self.curses_init()
@@ -87,6 +88,10 @@ class claw:
 		self.directory_populate()
 		self.screen.clear()
 		self.draw_frames()
+		try:
+			self.directorypad = curses.newpad(len(self.listfiles),self.cols - 2*self.inmarg)
+		except:
+			self.directorypad = curses.newpad(1,self.cols - 2*self.inmarg)
 		self.directorypad.clear()
 		self.draw_directorypad()
 		self.draw_fpad() 
@@ -119,6 +124,7 @@ class claw:
 		del self.listfiles 
 		self.listfiles = []
 		del self.lchoice; self.lchoice = 0
+		self.ext=None
 		self.directory_populate()
 		self.screen.clear()
 		self.draw_frames()
@@ -313,6 +319,7 @@ class claw:
 						continue
 					if self.listfiles[self.lchoice] not in self.chosen:
 						self.chosen.append(self.listfiles[self.lchoice])
+						self.abs_chosen.append(str(os.getcwd())+"/"+self.listfiles[self.lchoice])
 						self.draw_fpad()
 			if self.window == 1:
 				if self.ch == curses.KEY_UP and self.rchoice == 0:
@@ -336,6 +343,7 @@ class claw:
 						curses.doupdate()
 						continue
 					self.chosen.remove(self.chosen[self.rchoice])
+					self.abs_chosen.remove(self.abs_chosen[self.rchoice])
 					if self.rchoice == 0:
 						self.rchoice == 0
 					else:
@@ -352,8 +360,8 @@ class claw:
 		curses.endwin()
 		os.chdir(self.origin)
 
-#def fileclaw():
-#	c = claw()
-#	chosen = c.listfiles
-#	del c
-#	return chosen
+def fileclaw():
+	c = claw()
+	chosen = c.abs_chosen
+	del c
+	return chosen
