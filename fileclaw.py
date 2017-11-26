@@ -13,7 +13,6 @@ class claw:
 	def __init__(self, directory=None, ext=None):
 		if directory == None:
 			self.directory = str(os.getcwd())+"/"
-			print(self.directory)
 		rows, cols = os.popen('stty size','r').read().split()
 		self.rows=int(rows) 
 		self.cols=int(cols)
