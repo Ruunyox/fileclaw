@@ -13,7 +13,6 @@ class claw:
 	def __init__(self, directory=None, ext=None):
 		if directory == None:
 			self.directory = str(os.getcwd())+"/"
-			print(self.directory)
 		rows, cols = os.popen('stty size','r').read().split()
 		self.rows=int(rows) 
 		self.cols=int(cols)
@@ -27,12 +26,15 @@ class claw:
 		self.pad_y = self.outer_y - 4
 		self.ext=ext
 		self.window  = 0
-		self.lchoice = 0
+		self.lchoice = 0 # upper and lower pad choices
+		self.lchoice2= 0 # respectively
 		self.rchoice = 0
 		self.listfiles = []
+		self.folders = []
 		self.chosen = []
 		self.abs_chosen = []
 		self.ch = ''
+		self.show_dotfiles = False
 		self.directory_populate()
 		self.curses_init()
 		self.outerbox = curses.newwin(self.rows - 2*self.vmarg, \
@@ -42,11 +44,17 @@ class claw:
 			self.directorypad = curses.newpad(len(self.listfiles),self.cols - 2*self.inmarg)
 		except:
 			self.directorypad = curses.newpad(1,self.cols - 2*self.inmarg)
+		try:
+			self.folderpad = curses.newpad(len(self.folders),self.cols - 2*self.inmarg)
+		except:
+			self.folderpad = curses.newpad(1,self.cols - 2*self.inmarg)
+
 		self.fpad= curses.newpad(len(self.listfiles),self.cols - 2*self.inmarg)
 		self.okpad= curses.newpad(1,6)
 		self.draw_frames()
 		self.draw_ok()
 		self.draw_directorypad()
+		self.draw_folderpad()
 		self.draw_fpad()
 		self.mainloop()
 			
@@ -67,11 +75,17 @@ class claw:
 				for name in files:
 					if name[0] != ".":	
 						self.listfiles.append(name)
+				for folder in dirs:
+					folder = folder+"/"
+					self.folders.append(folder)
 				break
 			if self.ext != None:
 				for name in files:
 					if name.endswith(str(self.ext)):
 						self.listfiles.append(name)
+				for folder in dirs:
+					folder = folder+"/"
+					self.folders.append(folder)
 				break
 		
 	def set_ext(self):
@@ -100,30 +114,39 @@ class claw:
 	def fpad_expansion(self,fy):
 		self.fpad= curses.newpad(len(self.listfiles)+fy,self.cols - 2*self.inmarg)
 
-	def directory_change(self):
-		while(True):
-			self.screen.move(1,1)
-			self.screen.clrtoeol()
-			self.screen.addstr(1,1,"Change Directory: ")
-			self.screen.refresh()
-			curses.echo()
-			new_dir = self.screen.getstr()
-			curses.noecho()
-			new_dir = new_dir.decode()
-			try:
-				os.chdir(new_dir)
-				break
-			except:
+	def directory_change(self,new_dir=None):
+		if new_dir == None:
+			while(True):
 				self.screen.move(1,1)
 				self.screen.clrtoeol()
-				self.screen.addstr(1,1,"Directory Not Found. Press ENTER.")
-				errch=None
-				while errch != 10:
-					errch = self.screen.getch()	
+				self.screen.addstr(1,1,"Change Directory: ")
+				self.screen.refresh()
+				curses.echo()
+				new_dir = self.screen.getstr()
+				curses.noecho()
+				new_dir = new_dir.decode()
+				if '~' in new_dir:
+					new_dir.replace("~",os.path.expanduser("~"))
+					print(new_dir)
+				try:
+					os.chdir(new_dir)
+					break
+				except:
+					self.screen.move(1,1)
+					self.screen.clrtoeol()
+					self.screen.addstr(1,1,"Directory Not Found. Press ENTER.")
+					errch=None
+					while errch != 10:
+						errch = self.screen.getch()
+		if new_dir != None:
+			os.chdir(new_dir)	
 		self.directory = new_dir
 		del self.listfiles 
+		del self.folders
 		self.listfiles = []
+		self.folders = []
 		del self.lchoice; self.lchoice = 0
+		del self.lchoice2;self.lchoice2= 0
 		self.ext=None
 		self.directory_populate()
 		self.screen.clear()
@@ -135,8 +158,14 @@ class claw:
 			self.directorypad = curses.newpad(len(self.listfiles),self.cols - 2*self.inmarg)
 		except:
 			self.directorypad = curses.newpad(1,self.cols - 2*self.inmarg)
+		try:
+			self.folderpad = curses.newpad(len(self.folders),self.cols - 2*self.inmarg)
+		except:
+			self.folderpad = curses.newpad(1,self.cols - 2*self.inmarg)
+
 		self.directorypad.clear()
 		self.draw_directorypad()
+		self.draw_folderpad()
 		self.draw_fpad()
 		self.draw_ok()
 				
@@ -149,22 +178,52 @@ class claw:
 							"[ FILES ]")	
 		self.outerbox.addstr(self.outer_y-2,4*int((self.outer_x-len("[ BUILD ]"))/5),\
 							"[ BUILD ]")	
-			
+		
+		'''UPPER LEFT BOX'''
+	
 		self.outerbox.bkgd(curses.color_pair(1))
 		self.outerbox.move(1,self.inmarg)
 		self.outerbox.hline(curses.ACS_HLINE, int(self.outer_x/2) - 8)
-		self.outerbox.attron(curses.color_pair(2))
 		self.outerbox.move(1,int(self.outer_x/2) - 5)
-		self.outerbox.vline(curses.ACS_VLINE, self.outer_y - 4)
-		self.outerbox.move(self.outer_y-4,self.inmarg)
+		self.outerbox.attron(curses.color_pair(2))
+		self.outerbox.vline(curses.ACS_VLINE, int(self.outer_y/2) - 2)
+		self.outerbox.move(int(self.outer_y/2)-2,self.inmarg)
+		self.outerbox.attron(curses.color_pair(2))
 		self.outerbox.hline(curses.ACS_HLINE, int(self.outer_x/2) - 8)
 		self.outerbox.attron(curses.color_pair(1))
 		self.outerbox.move(1,self.inmarg)
-		self.outerbox.vline(curses.ACS_VLINE, self.outer_y - 4)
+		self.outerbox.vline(curses.ACS_VLINE, int(self.outer_y/2) - 2)
 			
 		self.outerbox.move(1,self.inmarg)
 		self.outerbox.addch(curses.ACS_ULCORNER)
 		self.outerbox.move(1,int(self.outer_x/2) -5)
+		self.outerbox.addch(curses.ACS_URCORNER)
+		self.outerbox.move(int(self.outer_y/2)-2,int(self.outer_x/2) - 5)
+		self.outerbox.attron(curses.color_pair(2))
+		self.outerbox.addch(curses.ACS_LRCORNER)
+		self.outerbox.attron(curses.color_pair(1))
+		self.outerbox.move(int(self.outer_y/2)-2,self.inmarg)
+		self.outerbox.addch(curses.ACS_LLCORNER)
+
+		'''LOWER LEFT BOX'''
+		self.outerbox.move(int(self.outer_y/2)+1,4)
+		self.outerbox.clrtoeol()
+		self.outerbox.addnstr(int(self.outer_y/2)+1,5,os.getcwd(),int(self.outer_x/2)-12)
+
+		self.outerbox.move(int(self.outer_y/2),self.inmarg)
+		self.outerbox.hline(curses.ACS_HLINE, int(self.outer_x/2) - 8)
+		self.outerbox.attron(curses.color_pair(2))
+		self.outerbox.move(int(self.outer_y/2),int(self.outer_x/2) - 5)
+		self.outerbox.vline(curses.ACS_VLINE, int(self.outer_y/2) - 3)
+		self.outerbox.move(int(self.outer_y)-4,self.inmarg)
+		self.outerbox.hline(curses.ACS_HLINE, int(self.outer_x/2) - 8)
+		self.outerbox.attron(curses.color_pair(1))
+		self.outerbox.move(int(self.outer_y/2),self.inmarg)
+		self.outerbox.vline(curses.ACS_VLINE, int(self.outer_y/2) - 3)
+			
+		self.outerbox.move(int(self.outer_y/2),self.inmarg)
+		self.outerbox.addch(curses.ACS_ULCORNER)
+		self.outerbox.move(int(self.outer_y/2),int(self.outer_x/2) -5)
 		self.outerbox.addch(curses.ACS_URCORNER)
 		self.outerbox.move(self.outer_y-4,int(self.outer_x/2) - 5)
 		self.outerbox.attron(curses.color_pair(2))
@@ -172,6 +231,8 @@ class claw:
 		self.outerbox.attron(curses.color_pair(1))
 		self.outerbox.move(self.outer_y-4,self.inmarg)
 		self.outerbox.addch(curses.ACS_LLCORNER)
+		
+		'''BIULDLIST'''
 		
 		self.outerbox.move(1,self.inmarg+int(self.outer_x/2))
 		self.outerbox.hline(curses.ACS_HLINE, int(self.outer_x/2) - 7)
@@ -232,16 +293,38 @@ class claw:
 			else:
 				self.directorypad.addstr(i,0,self.listfiles[i])
 		self.screen.noutrefresh()
-		if self.lchoice > (self.outer_y - 3*self.vmarg):
-			depth = self.lchoice - (self.outer_y - 3*self.vmarg)
+		if self.lchoice > (int((self.rows - 3*self.hmarg)/2) -6):
+			depth = self.lchoice - (int((self.rows - 3*self.hmarg)/2) -6)
 			self.directorypad.noutrefresh(depth,0,self.vmarg*2,self.hmarg*3, \
-								int(self.rows)-3*self.hmarg, \
-								int(self.cols/2)-2*self.hmarg-1)
+								int((self.rows-3*self.hmarg)/2), \
+								int(self.cols/2)-3*self.hmarg-1)
 		else:
 			self.directorypad.noutrefresh(0,0,self.vmarg*2,self.hmarg*3, \
-								int(self.rows)-3*self.hmarg, \
-								int(self.cols/2)-2*self.hmarg-1)
+								int((self.rows-3*self.hmarg)/2), \
+								int(self.cols/2)-3*self.hmarg-1)
 		curses.doupdate()
+
+	def draw_folderpad(self):
+		self.folderpad.bkgd(curses.color_pair(1))
+		for i in range(len(self.folders)):
+			if(i == self.lchoice2 and self.window == 3):
+				self.folderpad.attron(curses.A_REVERSE)
+				self.folderpad.addstr(i,0,self.folders[i])
+				self.folderpad.attroff(curses.A_REVERSE)
+			else:
+				self.folderpad.addstr(i,0,self.folders[i])
+		self.screen.noutrefresh()
+		if self.lchoice2 > (int((self.rows - 3*self.hmarg)/2) -7):
+			depth = self.lchoice2 - (int((self.rows - 3*self.hmarg)/2) -7)
+			self.folderpad.noutrefresh(depth,0,int((self.rows + self.vmarg*2)/2),self.hmarg*3, \
+								int(self.rows-3*self.hmarg), \
+								int(self.cols/2)-3*self.hmarg-1)
+		else:
+			self.folderpad.noutrefresh(0,0,int((self.rows + self.vmarg*2)/2),self.hmarg*3, \
+								int((self.rows-3*self.hmarg)), \
+								int(self.cols/2)-3*self.hmarg-1)
+		curses.doupdate()
+
 
 	def draw_fpad(self):
 		self.fpad.clear()
@@ -287,13 +370,18 @@ class claw:
 			self.ch = self.screen.getch()
 			if self.ch == ord('f'):
 				self.set_ext()
+			if self.ch == ord('u'):
+				self.directory_change(new_dir="../")
 			if self.ch == ord('c'):
 				self.directory_change()
 			if self.ch == ord('\t'):
-				self.window = (self.window+1)%3
+				self.window = (self.window+1)%4
 				if self.window == 1 and len(self.chosen)==0:
-					self.window = (self.window+1)%3
+					self.window = (self.window+1)%4
+				if self.window == 3 and len(self.folders)==0:
+					self.window = (self.window+1)%4
 				self.draw_directorypad()
+				self.draw_folderpad()
 				self.draw_fpad()
 				self.draw_ok()
 			if self.window == 0:
@@ -381,7 +469,31 @@ class claw:
 			if self.window == 2:
 				if self.ch == 10:
 					break
-			curses.doupdate()
+			if self.window == 3:
+				if self.ch == curses.KEY_UP and self.lchoice2 == 0:
+					self.lchoice2 = len(self.folders)-1 
+					self.draw_folderpad()
+					continue
+				if self.ch == curses.KEY_DOWN and self.lchoice2 == len(self.folders)-1:
+					self.lchoice2 = 0
+					self.draw_folderpad()
+					continue
+				if self.ch == curses.KEY_UP:
+					self.lchoice2 -= 1
+					self.draw_folderpad()
+					continue
+				if self.ch == curses.KEY_DOWN:
+					self.lchoice2 += 1
+					self.draw_folderpad()
+					continue
+				if self.ch == 10: #KEY_ENTER
+					if len(self.folders) == 0:
+						curses.doupdate()
+						continue
+					else:
+						self.directory_change(new_dir=str(self.folders[self.lchoice2]))
+						continue	
+			#curses.doupdate()
 		curses.endwin()
 		os.chdir(self.origin)
 
