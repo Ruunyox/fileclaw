@@ -108,6 +108,7 @@ class claw:
 			self.directorypad = curses.newpad(1,self.cols - 2*self.inmarg)
 		self.directorypad.clear()
 		self.draw_directorypad()
+		self.draw_folderpad()
 		self.draw_fpad() 
 		self.draw_ok()
 	
@@ -124,10 +125,9 @@ class claw:
 				curses.echo()
 				new_dir = self.screen.getstr()
 				curses.noecho()
-				new_dir = new_dir.decode()
-				if '~' in new_dir:
-					new_dir.replace("~",os.path.expanduser("~"))
-					print(new_dir)
+				new_dir = str(new_dir.decode())
+				if "~" in new_dir:
+					new_dir = new_dir.replace("~",os.path.expanduser("~"))
 				try:
 					os.chdir(new_dir)
 					break
@@ -138,7 +138,7 @@ class claw:
 					errch=None
 					while errch != 10:
 						errch = self.screen.getch()
-		if new_dir != None:
+		else:
 			os.chdir(new_dir)	
 		self.directory = new_dir
 		del self.listfiles 
