@@ -99,6 +99,7 @@ class claw:
 		curses.noecho()
 		del self.listfiles; self.listfiles = []
 		del self.lchoice; self.lchoice = 0
+		del self.folders; self.folders = []
 		self.directory_populate()
 		self.screen.clear()
 		self.draw_frames()
@@ -106,7 +107,13 @@ class claw:
 			self.directorypad = curses.newpad(len(self.listfiles),self.cols - 2*self.inmarg)
 		except:
 			self.directorypad = curses.newpad(1,self.cols - 2*self.inmarg)
+		try:
+			self.folderpad = curses.newpad(len(self.folders),self.cols - 2*self.inmarg)
+		except:
+			self.folderpad = curses.newpad(1,self.cols - 2*self.inmarg)
+
 		self.directorypad.clear()
+		self.folderpad.clear()
 		self.draw_directorypad()
 		self.draw_folderpad()
 		self.draw_fpad() 
@@ -197,6 +204,7 @@ class claw:
 		self.outerbox.move(1,self.inmarg)
 		self.outerbox.addch(curses.ACS_ULCORNER)
 		self.outerbox.move(1,int(self.outer_x/2) -5)
+		self.outerbox.attron(curses.color_pair(2))
 		self.outerbox.addch(curses.ACS_URCORNER)
 		self.outerbox.move(int(self.outer_y/2)-2,int(self.outer_x/2) - 5)
 		self.outerbox.attron(curses.color_pair(2))
@@ -223,10 +231,10 @@ class claw:
 			
 		self.outerbox.move(int(self.outer_y/2),self.inmarg)
 		self.outerbox.addch(curses.ACS_ULCORNER)
+		self.outerbox.attron(curses.color_pair(2))
 		self.outerbox.move(int(self.outer_y/2),int(self.outer_x/2) -5)
 		self.outerbox.addch(curses.ACS_URCORNER)
 		self.outerbox.move(self.outer_y-4,int(self.outer_x/2) - 5)
-		self.outerbox.attron(curses.color_pair(2))
 		self.outerbox.addch(curses.ACS_LRCORNER)
 		self.outerbox.attron(curses.color_pair(1))
 		self.outerbox.move(self.outer_y-4,self.inmarg)
@@ -248,9 +256,9 @@ class claw:
 		self.outerbox.move(1,self.inmarg+int(self.outer_x/2))
 		self.outerbox.addch(curses.ACS_ULCORNER)
 		self.outerbox.move(1,self.outer_x-5)
+		self.outerbox.attron(curses.color_pair(2))
 		self.outerbox.addch(curses.ACS_URCORNER)
 		self.outerbox.move(self.outer_y-4,self.outer_x-5)
-		self.outerbox.attron(curses.color_pair(2))
 		self.outerbox.addch(curses.ACS_LRCORNER)
 		self.outerbox.attron(curses.color_pair(1))
 		self.outerbox.move(self.outer_y-4,self.inmarg+int(self.outer_x/2))
@@ -272,13 +280,15 @@ class claw:
 		self.outerbox.move(self.outer_y-self.hmarg,int(self.outer_x/2)-2*self.inmarg)
 		self.outerbox.addch(curses.ACS_ULCORNER)
 		self.outerbox.move(self.outer_y-self.hmarg,int(self.outer_x/2)+self.inmarg+1)
+		self.outerbox.attron(curses.color_pair(1))
 		self.outerbox.addch(curses.ACS_URCORNER)
 		self.outerbox.move(self.outer_y-1,int(self.outer_x/2)-2*self.inmarg)
+		self.outerbox.attron(curses.color_pair(2))
 		self.outerbox.addch(curses.ACS_LLCORNER)
-		self.outerbox.attron(curses.color_pair(1))
 		self.outerbox.move(self.outer_y-1,int(self.outer_x/2)+self.inmarg+1)
+		self.outerbox.attron(curses.color_pair(1))
 		self.outerbox.addch(curses.ACS_LRCORNER)
-			
+
 		self.screen.noutrefresh()	
 		self.outerbox.noutrefresh()
 		curses.doupdate()	
@@ -500,5 +510,9 @@ class claw:
 def fileclaw():
 	c = claw()
 	chosen = c.abs_chosen
-	del c
-	return chosen
+	if len(chosen)==1:
+		del c 
+		return chosen[0]
+	else:
+		del c
+		return chosen
