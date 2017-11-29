@@ -2,7 +2,7 @@
 ### Interactive Python File Selection
 
 <p align="center">
-<img src="image.png" width="70%" height="70%"/>
+<img src="image_2.png" width="70%" height="70%"/>
 <p/>
 
 ---
