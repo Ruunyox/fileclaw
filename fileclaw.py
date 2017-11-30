@@ -48,8 +48,10 @@ class claw:
 			self.folderpad = curses.newpad(len(self.folders),self.cols - 2*self.inmarg)
 		except:
 			self.folderpad = curses.newpad(1,self.cols - 2*self.inmarg)
-
-		self.fpad= curses.newpad(len(self.listfiles),self.cols - 2*self.inmarg)
+		try:
+			self.fpad= curses.newpad(len(self.listfiles),self.cols - 2*self.inmarg)
+		except:	
+			self.fpad= curses.newpad(1,self.cols - 2*self.inmarg)
 		self.okpad= curses.newpad(1,6)
 		self.draw_frames()
 		self.draw_ok()
@@ -507,12 +509,8 @@ class claw:
 		curses.endwin()
 		os.chdir(self.origin)
 
-def fileclaw():
-	c = claw()
+def fileclaw(ext=None):
+	c = claw(ext=ext)
 	chosen = c.abs_chosen
-	if len(chosen)==1:
-		del c 
-		return chosen[0]
-	else:
-		del c
-		return chosen
+	del c
+	return chosen
